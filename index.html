@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PASSPHRASE.GEN</title>
+  <style>
+    :root {
+      --green:       #00ff41;
+      --green-dim:   #00b82e;
+      --green-faint: #003d0f;
+      --amber:       #ffb000;
+      --red:         #ff3333;
+      --bg:          #060606;
+      --bg-panel:    #0b0b0b;
+      --border:      #163d16;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--green);
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 14px;
+      line-height: 1.5;
+      min-height: 100vh;
+      padding: 2rem 1.5rem 4rem;
+      overflow-x: hidden;
+    }
+
+    /* CRT scanlines overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,0,0,0.12) 2px,
+        rgba(0,0,0,0.12) 4px
+      );
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    /* ── Layout ── */
+    .terminal {
+      max-width: 860px;
+      margin: 0 auto;
+    }
+
+    /* ── Header ── */
+    .header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .header pre {
+      font-size: 10px;
+      line-height: 1.15;
+      color: var(--green);
+      text-shadow: 0 0 8px var(--green), 0 0 18px rgba(0,255,65,0.4);
+      display: inline-block;
+      text-align: left;
+    }
+
+    .subtitle {
+      color: var(--green-dim);
+      font-size: 11px;
+      letter-spacing: 0.35em;
+      margin-top: 0.6rem;
+      text-shadow: 0 0 6px rgba(0,255,65,0.5);
+    }
+
+    .cursor {
+      animation: blink 1s step-end infinite;
+    }
+    @keyframes blink { 50% { opacity: 0; } }
+
+    /* ── Status bar ── */
+    .status {
+      font-size: 11px;
+      color: #444;
+      margin-bottom: 1.2rem;
+      padding: 0 2px;
+    }
+    .status.loading { color: var(--amber); }
+    .status.ready   { color: var(--green-dim); }
+    .status.error   { color: var(--red); }
+
+    /* ── Panels ── */
+    .panel {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      margin-bottom: 1.2rem;
+      position: relative;
+    }
+
+    .panel-title {
+      position: absolute;
+      top: -9px;
+      left: 14px;
+      background: var(--bg-panel);
+      padding: 0 6px;
+      font-size: 10px;
+      color: var(--green-dim);
+      letter-spacing: 0.25em;
+    }
+
+    .panel-body {
+      padding: 1.6rem 1.4rem 1.2rem;
+    }
+
+    /* ── Config grid ── */
+    .config-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 1.2rem 1.6rem;
+    }
+
+    .config-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+    }
+
+    .config-label {
+      font-size: 10px;
+      color: var(--green-dim);
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+
+    /* ── Inputs ── */
+    input[type="number"],
+    input[type="text"] {
+      background: #000;
+      border: 1px solid var(--border);
+      color: var(--green);
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 14px;
+      padding: 5px 8px;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      -moz-appearance: textfield;
+    }
+    input[type="number"] { width: 80px; }
+    input[type="text"]   { width: 60px; }
+
+    input[type="number"]::-webkit-outer-spin-button,
+    input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+    input:focus {
+      border-color: var(--green);
+      box-shadow: 0 0 8px rgba(0,255,65,0.25);
+    }
+
+    /* ── Toggle ── */
+    .toggle {
+      display: inline-flex;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .toggle input[type="checkbox"] { display: none; }
+
+    .toggle-track {
+      font-size: 11px;
+      padding: 4px 10px;
+      border: 1px solid;
+      min-width: 56px;
+      text-align: center;
+      letter-spacing: 0.1em;
+      transition: all 0.15s;
+    }
+
+    .toggle input:checked  ~ .toggle-track {
+      color: var(--green);
+      border-color: var(--green);
+      background: rgba(0,255,65,0.07);
+      box-shadow: 0 0 6px rgba(0,255,65,0.2), inset 0 0 6px rgba(0,255,65,0.05);
+    }
+    .toggle input:not(:checked) ~ .toggle-track {
+      color: #333;
+      border-color: #1c1c1c;
+    }
+
+    /* ── Generate button ── */
+    .generate-area {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.6rem 0 1.2rem;
+    }
+
+    .btn-generate {
+      background: none;
+      border: 1px solid var(--green);
+      color: var(--green);
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 15px;
+      padding: 10px 52px;
+      cursor: pointer;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      transition: all 0.15s;
+      box-shadow: 0 0 12px rgba(0,255,65,0.12), inset 0 0 12px rgba(0,255,65,0.04);
+    }
+    .btn-generate:hover {
+      background: rgba(0,255,65,0.08);
+      box-shadow: 0 0 24px rgba(0,255,65,0.35), inset 0 0 16px rgba(0,255,65,0.08);
+    }
+    .btn-generate:active { background: rgba(0,255,65,0.16); }
+
+    /* ── Output ── */
+    .output-header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+
+    .output-count {
+      font-size: 10px;
+      color: #333;
+      letter-spacing: 0.15em;
+    }
+
+    .btn-copy-all {
+      background: none;
+      border: 1px solid #1c1c1c;
+      color: #333;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 10px;
+      padding: 3px 10px;
+      cursor: pointer;
+      letter-spacing: 0.12em;
+      transition: all 0.15s;
+    }
+    .btn-copy-all:hover {
+      border-color: var(--green-dim);
+      color: var(--green);
+    }
+    .btn-copy-all.copied {
+      border-color: var(--green);
+      color: var(--green);
+    }
+
+    .output-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .passphrase-row {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      padding: 6px 0;
+      border-bottom: 1px solid #0f0f0f;
+    }
+    .passphrase-row:last-child { border-bottom: none; }
+
+    .passphrase-idx {
+      font-size: 10px;
+      color: #2a2a2a;
+      min-width: 26px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    .passphrase-prompt {
+      color: var(--green-dim);
+      font-size: 13px;
+      flex-shrink: 0;
+    }
+
+    .passphrase-text {
+      flex: 1;
+      font-size: 14px;
+      word-break: break-all;
+      text-shadow: 0 0 5px rgba(0,255,65,0.35);
+    }
+
+    .btn-copy {
+      background: none;
+      border: 1px solid #1a1a1a;
+      color: #2a2a2a;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 10px;
+      padding: 3px 8px;
+      cursor: pointer;
+      letter-spacing: 0.1em;
+      transition: all 0.15s;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .btn-copy:hover { border-color: var(--green-dim); color: var(--green); }
+    .btn-copy.copied { border-color: var(--green); color: var(--green); }
+
+    /* ── Footer ── */
+    .footer {
+      text-align: center;
+      margin-top: 2.5rem;
+      font-size: 10px;
+      color: #1e1e1e;
+      letter-spacing: 0.15em;
+    }
+  </style>
+</head>
+<body>
+<div class="terminal">
+
+  <div class="header">
+    <pre>
+██████╗  █████╗ ███████╗███████╗██████╗ ██╗  ██╗██████╗  █████╗ ███████╗███████╗
+██╔══██╗██╔══██╗██╔════╝██╔════╝██╔══██╗██║  ██║██╔══██╗██╔══██╗██╔════╝██╔════╝
+██████╔╝███████║███████╗███████╗██████╔╝███████║██████╔╝███████║███████╗█████╗
+██╔═══╝ ██╔══██║╚════██║╚════██║██╔═══╝ ██╔══██║██╔══██╗██╔══██║╚════██║██╔══╝
+██║     ██║  ██║███████║███████║██║     ██║  ██║██║  ██║██║  ██║███████║███████╗
+╚═╝     ╚═╝  ╚═╝╚══════╝╚══════╝╚═╝     ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝╚══════╝
+    </pre>
+    <div class="subtitle">SECURE PASSPHRASE GENERATOR v1.0 <span class="cursor">█</span></div>
+  </div>
+
+  <div id="status" class="status loading">// LOADING WORDLIST...</div>
+
+  <div class="panel">
+    <div class="panel-title">// CONFIG</div>
+    <div class="panel-body">
+      <div class="config-grid">
+
+        <div class="config-item">
+          <div class="config-label">Passphrases to generate</div>
+          <input type="number" id="numPhrases" value="10" min="1" max="100">
+        </div>
+
+        <div class="config-item">
+          <div class="config-label">Words per phrase</div>
+          <input type="number" id="numWords" value="5" min="1" max="20">
+        </div>
+
+        <div class="config-item">
+          <div class="config-label">Separator character</div>
+          <input type="text" id="separator" value="-" maxlength="3">
+        </div>
+
+        <div class="config-item">
+          <div class="config-label">Numbers to salt in</div>
+          <input type="number" id="numNumbers" value="1" min="0" max="10">
+        </div>
+
+        <div class="config-item">
+          <div class="config-label">Numbers in middle of word</div>
+          <label class="toggle">
+            <input type="checkbox" id="numbersInMiddle">
+            <span class="toggle-track">OFF</span>
+          </label>
+        </div>
+
+        <div class="config-item">
+          <div class="config-label">Capitalize words</div>
+          <label class="toggle">
+            <input type="checkbox" id="capitalizeWords" checked>
+            <span class="toggle-track">ON</span>
+          </label>
+        </div>
+
+        <div class="config-item">
+          <div class="config-label">Random letter caps (5% per letter)</div>
+          <label class="toggle">
+            <input type="checkbox" id="randomCaps">
+            <span class="toggle-track">OFF</span>
+          </label>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="generate-area">
+    <button class="btn-generate" id="btnGenerate">[ GENERATE ]</button>
+  </div>
+
+  <div class="panel" id="outputPanel" style="display:none">
+    <div class="panel-title">// OUTPUT</div>
+    <div class="panel-body">
+      <div class="output-header-row">
+        <span class="output-count" id="outputCount"></span>
+        <button class="btn-copy-all" id="btnCopyAll">[ COPY ALL ]</button>
+      </div>
+      <div class="output-list" id="outputList"></div>
+    </div>
+  </div>
+
+  <div class="footer">// WORDLIST: 6,564 WORDS · 4–8 CHARS · GOOGLE-10000-ENGLISH (NO SWEARS)</div>
+
+</div>
+
+<script>
+  'use strict';
+
+  let words = [];
+
+  // ── Wordlist loader ───────────────────────────────────────────────────────
+  async function loadWords() {
+    const el = document.getElementById('status');
+    try {
+      const resp = await fetch('static/words.txt');
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const text = await resp.text();
+      words = text.split('\n').map(w => w.trim()).filter(Boolean);
+      el.textContent = `// WORDLIST LOADED — ${words.length} WORDS READY`;
+      el.className = 'status ready';
+    } catch (e) {
+      el.textContent = `// ERROR: FAILED TO LOAD WORDLIST — ${e.message}`;
+      el.className = 'status error';
+    }
+  }
+
+  // ── Toggle label sync ─────────────────────────────────────────────────────
+  document.querySelectorAll('.toggle input[type="checkbox"]').forEach(cb => {
+    cb.addEventListener('change', () => {
+      cb.nextElementSibling.textContent = cb.checked ? 'ON' : 'OFF';
+    });
+  });
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
+  function randInt(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  }
+
+  function getInt(id, fallback) {
+    return Math.max(0, parseInt(document.getElementById(id).value, 10) || fallback);
+  }
+
+  // ── Capitalization ────────────────────────────────────────────────────────
+  function applyCapitalization(word, capitalizeWords, randomCaps) {
+    let letters = word.split('');
+
+    if (randomCaps) {
+      // 5% per letter, guarantee at least one uppercase
+      letters = letters.map(l => Math.random() < 0.05 ? l.toUpperCase() : l);
+      if (!letters.some(l => l !== l.toLowerCase())) {
+        letters[randInt(0, letters.length - 1)] =
+          letters[randInt(0, letters.length - 1)].toUpperCase();
+      }
+    }
+
+    if (capitalizeWords) {
+      letters[0] = letters[0].toUpperCase();
+    }
+
+    return letters.join('');
+  }
+
+  // ── Core generator ────────────────────────────────────────────────────────
+  function generatePassphrase(opts) {
+    const { numWords, separator, numNumbers, numbersInMiddle, capitalizeWords, randomCaps } = opts;
+
+    // Pick words
+    let selected = Array.from({ length: numWords }, () =>
+      words[randInt(0, words.length - 1)]
+    );
+
+    // Capitalise
+    selected = selected.map(w => applyCapitalization(w, capitalizeWords, randomCaps));
+
+    // Salt in numbers
+    for (let i = 0; i < numNumbers; i++) {
+      const num = String(randInt(0, 99));
+      const wi  = randInt(0, selected.length - 1);
+      const w   = selected[wi];
+
+      if (numbersInMiddle && w.length > 1) {
+        // Insert at a middle position (not at 0 or len)
+        const pos = randInt(1, w.length - 1);
+        selected[wi] = w.slice(0, pos) + num + w.slice(pos);
+      } else {
+        // Prepend or append
+        selected[wi] = Math.random() < 0.5 ? num + w : w + num;
+      }
+    }
+
+    return selected.join(separator);
+  }
+
+  // ── Render output ─────────────────────────────────────────────────────────
+  function generate() {
+    if (!words.length) {
+      document.getElementById('status').textContent = '// ERR: WORDLIST NOT READY';
+      document.getElementById('status').className = 'status error';
+      return;
+    }
+
+    const opts = {
+      numWords:        Math.max(1, getInt('numWords', 5)),
+      separator:       document.getElementById('separator').value,
+      numNumbers:      getInt('numNumbers', 1),
+      numbersInMiddle: document.getElementById('numbersInMiddle').checked,
+      capitalizeWords: document.getElementById('capitalizeWords').checked,
+      randomCaps:      document.getElementById('randomCaps').checked,
+    };
+    const count = Math.min(100, Math.max(1, getInt('numPhrases', 10)));
+
+    const phrases = Array.from({ length: count }, () => generatePassphrase(opts));
+
+    const list = document.getElementById('outputList');
+    list.innerHTML = '';
+
+    phrases.forEach((phrase, i) => {
+      const row  = document.createElement('div');
+      row.className = 'passphrase-row';
+
+      const idx  = document.createElement('span');
+      idx.className = 'passphrase-idx';
+      idx.textContent = String(i + 1).padStart(2, '0');
+
+      const prompt = document.createElement('span');
+      prompt.className = 'passphrase-prompt';
+      prompt.textContent = '>';
+
+      const text = document.createElement('span');
+      text.className = 'passphrase-text';
+      text.textContent = phrase;
+
+      const btn  = document.createElement('button');
+      btn.className = 'btn-copy';
+      btn.textContent = '[ COPY ]';
+      btn.addEventListener('click', () => copyText(btn, phrase));
+
+      row.append(idx, prompt, text, btn);
+      list.appendChild(row);
+    });
+
+    document.getElementById('outputCount').textContent =
+      `// ${count} PHRASE${count !== 1 ? 'S' : ''} GENERATED`;
+    document.getElementById('outputPanel').style.display = '';
+
+    // Wire copy-all
+    const copyAllBtn = document.getElementById('btnCopyAll');
+    copyAllBtn.className = 'btn-copy-all';
+    copyAllBtn.textContent = '[ COPY ALL ]';
+    copyAllBtn._phrases = phrases;
+  }
+
+  // ── Clipboard ─────────────────────────────────────────────────────────────
+  async function copyText(btn, text) {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      // Safari / older browser fallback
+      const ta = Object.assign(document.createElement('textarea'), {
+        value: text, style: 'position:fixed;opacity:0'
+      });
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    }
+    const orig = btn.textContent;
+    btn.textContent = '[ COPIED ]';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); }, 1400);
+  }
+
+  document.getElementById('btnCopyAll').addEventListener('click', function () {
+    const phrases = this._phrases;
+    if (!phrases) return;
+    copyText(this, phrases.join('\n'));
+  });
+
+  document.getElementById('btnGenerate').addEventListener('click', generate);
+
+  // ── Boot ──────────────────────────────────────────────────────────────────
+  loadWords().then(() => { if (words.length) generate(); });
+</script>
+</body>
+</html>
