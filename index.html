@@ -157,6 +157,18 @@
       box-shadow: 0 0 8px rgba(0,255,65,0.25);
     }
 
+    input.invalid {
+      border-color: var(--red) !important;
+      box-shadow: 0 0 8px rgba(255,51,51,0.35) !important;
+    }
+
+    .field-error {
+      font-size: 10px;
+      color: var(--red);
+      letter-spacing: 0.12em;
+      min-height: 14px;
+    }
+
     /* ── Toggle ── */
     .toggle {
       display: inline-flex;
@@ -337,11 +349,13 @@
         <div class="config-item">
           <div class="config-label">Passphrases to generate</div>
           <input type="number" id="numPhrases" value="10" min="1" max="100">
+          <span class="field-error" id="err-numPhrases"></span>
         </div>
 
         <div class="config-item">
           <div class="config-label">Words per phrase</div>
           <input type="number" id="numWords" value="5" min="1" max="20">
+          <span class="field-error" id="err-numWords"></span>
         </div>
 
         <div class="config-item">
@@ -352,6 +366,7 @@
         <div class="config-item">
           <div class="config-label">Numbers to salt in</div>
           <input type="number" id="numNumbers" value="1" min="0" max="10">
+          <span class="field-error" id="err-numNumbers"></span>
         </div>
 
         <div class="config-item">
@@ -434,9 +449,37 @@
     return Math.floor(Math.random() * (max - min + 1)) + min;
   }
 
-  function getInt(id, fallback) {
-    return Math.max(0, parseInt(document.getElementById(id).value, 10) || fallback);
+  // ── Input validation ──────────────────────────────────────────────────────
+  const FIELD_RULES = [
+    { id: 'numPhrases',  errId: 'err-numPhrases',  min: 1,  msg: '// ERR: MUST BE >= 1' },
+    { id: 'numWords',    errId: 'err-numWords',    min: 1,  msg: '// ERR: MUST BE >= 1' },
+    { id: 'numNumbers',  errId: 'err-numNumbers',  min: 0,  msg: '// ERR: MUST BE >= 0' },
+  ];
+
+  function validateInputs() {
+    let ok = true;
+    for (const { id, errId, min, msg } of FIELD_RULES) {
+      const input = document.getElementById(id);
+      const errEl = document.getElementById(errId);
+      const val   = parseInt(input.value, 10);
+      const fail  = !Number.isInteger(val) || val < min;
+      input.classList.toggle('invalid', fail);
+      errEl.textContent = fail ? msg : '';
+      if (fail) ok = false;
+    }
+    return ok;
   }
+
+  // Clear field error as soon as the user corrects a value
+  FIELD_RULES.forEach(({ id, errId, min }) => {
+    document.getElementById(id).addEventListener('input', function () {
+      const val = parseInt(this.value, 10);
+      if (Number.isInteger(val) && val >= min) {
+        this.classList.remove('invalid');
+        document.getElementById(errId).textContent = '';
+      }
+    });
+  });
 
   // ── Capitalization ────────────────────────────────────────────────────────
   function applyCapitalization(word, capitalizeWords, randomCaps) {
@@ -497,15 +540,17 @@
       return;
     }
 
+    if (!validateInputs()) return;
+
+    const count = parseInt(document.getElementById('numPhrases').value, 10);
     const opts = {
-      numWords:        Math.max(1, getInt('numWords', 5)),
+      numWords:        parseInt(document.getElementById('numWords').value, 10),
       separator:       document.getElementById('separator').value,
-      numNumbers:      getInt('numNumbers', 1),
+      numNumbers:      parseInt(document.getElementById('numNumbers').value, 10),
       numbersInMiddle: document.getElementById('numbersInMiddle').checked,
       capitalizeWords: document.getElementById('capitalizeWords').checked,
       randomCaps:      document.getElementById('randomCaps').checked,
     };
-    const count = Math.min(100, Math.max(1, getInt('numPhrases', 10)));
 
     const phrases = Array.from({ length: count }, () => generatePassphrase(opts));
 
