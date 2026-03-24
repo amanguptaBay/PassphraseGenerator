@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- Background -->
+  <rect width="32" height="32" rx="4" fill="#060606"/>
+  <!-- Lock shackle (top arc of lock) -->
+  <path d="M10 15 L10 11 A6 6 0 0 1 22 11 L22 15" fill="none" stroke="#00ff41" stroke-width="2.5" stroke-linecap="square"/>
+  <!-- Lock body -->
+  <rect x="7" y="14" width="18" height="13" rx="1.5" fill="none" stroke="#00ff41" stroke-width="2"/>
+  <!-- Keyhole dot -->
+  <circle cx="16" cy="20" r="2" fill="#00ff41"/>
+  <!-- Keyhole slot -->
+  <rect x="15" y="21" width="2" height="3" fill="#00ff41"/>
+</svg>

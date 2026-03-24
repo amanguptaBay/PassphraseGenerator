@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 640" font-family="'Courier New', Courier, monospace">
+  <!-- Background -->
+  <rect width="1280" height="640" fill="#060606"/>
+
+  <!-- Subtle grid lines -->
+  <line x1="0" y1="320" x2="1280" y2="320" stroke="#0d200d" stroke-width="1"/>
+  <line x1="640" y1="0" x2="640" y2="640" stroke="#0d200d" stroke-width="1"/>
+
+  <!-- Border frame -->
+  <rect x="32" y="32" width="1216" height="576" rx="6" fill="none" stroke="#163d16" stroke-width="1.5"/>
+
+  <!-- Corner ticks -->
+  <line x1="32" y1="32"  x2="80"   y2="32"  stroke="#00b82e" stroke-width="2"/>
+  <line x1="32" y1="32"  x2="32"   y2="80"  stroke="#00b82e" stroke-width="2"/>
+  <line x1="1248" y1="32"  x2="1200" y2="32"  stroke="#00b82e" stroke-width="2"/>
+  <line x1="1248" y1="32"  x2="1248" y2="80"  stroke="#00b82e" stroke-width="2"/>
+  <line x1="32"   y1="608" x2="80"   y2="608" stroke="#00b82e" stroke-width="2"/>
+  <line x1="32"   y1="608" x2="32"   y2="560" stroke="#00b82e" stroke-width="2"/>
+  <line x1="1248" y1="608" x2="1200" y2="608" stroke="#00b82e" stroke-width="2"/>
+  <line x1="1248" y1="608" x2="1248" y2="560" stroke="#00b82e" stroke-width="2"/>
+
+  <!-- Lock glyph (centred, left half) -->
+  <!-- shackle -->
+  <path d="M390 230 L390 200 A50 50 0 0 1 490 200 L490 230"
+        fill="none" stroke="#00ff41" stroke-width="16" stroke-linecap="square"/>
+  <!-- body -->
+  <rect x="362" y="226" width="156" height="110" rx="8"
+        fill="none" stroke="#00ff41" stroke-width="14"/>
+  <!-- keyhole dot -->
+  <circle cx="440" cy="274" r="14" fill="#00ff41"/>
+  <!-- keyhole slot -->
+  <rect x="432" y="282" width="16" height="22" fill="#00ff41"/>
+
+  <!-- App title -->
+  <text x="640" y="268"
+        fill="#00ff41"
+        font-size="72"
+        font-weight="bold"
+        letter-spacing="8"
+        text-anchor="middle">PASSPHRASE</text>
+  <text x="640" y="348"
+        fill="#00b82e"
+        font-size="72"
+        font-weight="bold"
+        letter-spacing="8"
+        text-anchor="middle">GENERATOR</text>
+
+  <!-- Divider -->
+  <line x1="560" y1="376" x2="720" y2="376" stroke="#163d16" stroke-width="1.5"/>
+
+  <!-- Tagline -->
+  <text x="640" y="416"
+        fill="#00b82e"
+        font-size="22"
+        letter-spacing="5"
+        text-anchor="middle">// CRYPTOGRAPHICALLY RANDOM · HUMAN READABLE</text>
+
+  <!-- Prompt line -->
+  <text x="640" y="506"
+        fill="#163d16"
+        font-size="20"
+        letter-spacing="4"
+        text-anchor="middle">$ generate --words 4 --separator - --count 10</text>
+
+  <!-- Blinking cursor stand-in -->
+  <rect x="1060" y="487" width="13" height="22" fill="#00ff41" opacity="0.6"/>
+
+  <!-- Version / label bottom-left -->
+  <text x="64" y="596"
+        fill="#163d16"
+        font-size="16"
+        letter-spacing="4">// amanguptabay/passphrasegenerator</text>
+
+  <!-- Top-right label -->
+  <text x="1216" y="72"
+        fill="#163d16"
+        font-size="16"
+        letter-spacing="4"
+        text-anchor="end">v1.0</text>
+</svg>
